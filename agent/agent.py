@@ -34,7 +34,9 @@ import asyncio
 import json
 import os
 import sys
+import time
 import ollama
+import httpx
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
@@ -104,6 +106,26 @@ def print_section(title: str, content: str = "", color_code: str = ""):
         print(content)
 
 
+def wait_for_ollama(url: str, model: str, timeout: int = 120):
+    """Wait for Ollama to be reachable and the model to be loaded before starting."""
+    print(f"  Waiting for Ollama at {url} ...")
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            resp = httpx.get(f"{url}/api/tags", timeout=5)
+            if resp.status_code == 200:
+                models = [m["name"] for m in resp.json().get("models", [])]
+                if any(model in m for m in models):
+                    print(f"  ✓ Ollama is ready (model '{model}' available)")
+                    return
+                print(f"  Ollama up but model '{model}' not yet available, retrying...")
+        except Exception:
+            pass
+        time.sleep(5)
+    print(f"  ✗ Timed out waiting for Ollama after {timeout}s")
+    sys.exit(1)
+
+
 # ===================================================
 # THE MAIN AGENT FUNCTION
 # ===================================================
@@ -124,7 +146,10 @@ async def run_soc_agent(user_query: str):
     print(f"  Model:      {MODEL}")
     print(f"  MCP Server: {MCP_SERVER_URL}")
     print(f"  Ollama:     {OLLAMA_URL}")
-    
+
+    # Wait for Ollama and the model to be available before proceeding
+    wait_for_ollama(OLLAMA_URL, MODEL)
+
     # -------------------------------------------------------
     # STEP 1: Connect to MCP Server
     # -------------------------------------------------------
