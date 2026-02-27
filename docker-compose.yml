@@ -1,0 +1,152 @@
+# =============================================================
+#  docker-compose.yml
+# =============================================================
+#  What this file does:
+#    Defines three services that work together:
+#
+#    1. ollama     - The local LLM server (runs llama3.1:8b on T4 GPU)
+#    2. mcp-server - Our SOC tools MCP server (the "toolbox")
+#    3. agent      - The AI agent (uses ollama + mcp-server)
+#
+#    Docker Compose handles the networking between them.
+#    Each service can reach the others by their service name
+#    (e.g., the agent reaches Ollama at http://ollama:11434)
+#
+#  Usage:
+#    Start everything:    docker compose up -d
+#    View logs:           docker compose logs -f
+#    Run agent once:      docker compose run --rm agent python agent.py
+#    Test tools only:     docker compose run --rm agent python test_tools.py
+#    Tear down:           docker compose down
+# =============================================================
+
+services:
+
+  # ─── SERVICE 1: Ollama (Local LLM) ────────────────────────
+  # Ollama serves the LLM locally. The agent sends prompts here
+  # and gets back responses (including tool call decisions).
+  # ─────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: soc-ollama
+    ports:
+      - "11434:11434"   # Expose so you can also query Ollama from your host
+    volumes:
+      - ollama_models:/root/.ollama  # Persist downloaded models between restarts
+    
+    # ── GPU Configuration for NVIDIA T4 ──────────────────────
+    # This tells Docker to pass the GPU through to the container
+    # Requires: nvidia-container-toolkit installed on the host
+    # ─────────────────────────────────────────────────────────
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    
+    # Health check: wait until Ollama is ready before starting other services
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    restart: unless-stopped
+
+
+  # ─── SERVICE 2: Model Puller (runs once, then exits) ──────
+  # Downloads the llama3.1:8b model into Ollama on first run.
+  # This is a one-shot service - it runs, pulls the model, exits.
+  # The model is saved in the ollama_models volume so it only
+  # downloads once.
+  # ─────────────────────────────────────────────────────────
+  model-puller:
+    image: ollama/ollama:latest
+    container_name: soc-model-puller
+    volumes:
+      - ollama_models:/root/.ollama
+    
+    # Wait for ollama to be healthy, then pull the model
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...' &&
+        sleep 10 &&
+        ollama pull llama3.1:8b &&
+        echo 'Model ready!'
+      "
+    
+    environment:
+      - OLLAMA_HOST=http://ollama:11434  # Point to the ollama service
+    
+    depends_on:
+      ollama:
+        condition: service_healthy
+    
+    restart: "no"   # Only run once
+
+
+  # ─── SERVICE 3: MCP Server (SOC Toolbox) ──────────────────
+  # This runs our mcp_server/server.py
+  # It exposes tools over HTTP (SSE transport) on port 8000
+  # The agent connects to this to discover and call tools
+  # ─────────────────────────────────────────────────────────
+  mcp-server:
+    build:
+      context: ./mcp_server
+      dockerfile: Dockerfile
+    container_name: soc-mcp-server
+    ports:
+      - "8000:8000"   # Expose so you can inspect MCP server from host if needed
+    
+    # Health check: make sure the MCP server is up before agent starts
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/sse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    restart: unless-stopped
+
+
+  # ─── SERVICE 4: The Agent ─────────────────────────────────
+  # This runs our agent/agent.py
+  # It waits for both ollama and mcp-server to be healthy
+  # before starting.
+  # ─────────────────────────────────────────────────────────
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: soc-agent
+    
+    # ── Environment variables for configuration ───────────────
+    # Students can change the model or URLs here without
+    # touching the Python code
+    # ─────────────────────────────────────────────────────────
+    environment:
+      - MCP_SERVER_URL=http://mcp-server:8000/sse
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.1:8b
+      - MAX_ITERATIONS=10
+    
+    depends_on:
+      ollama:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+    
+    restart: unless-stopped
+
+
+# ─── VOLUMES ──────────────────────────────────────────────────
+# Named volumes persist data between container restarts.
+# ollama_models saves downloaded LLM models so you don't
+# have to re-download llama3.1:8b (4GB) every time.
+# ─────────────────────────────────────────────────────────────
+volumes:
+  ollama_models:
+    driver: local

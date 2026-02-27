@@ -1,0 +1,15 @@
+# MCP Server Dependencies
+# ─────────────────────────────────────────────────────────────────
+# mcp[cli]   - The official Anthropic MCP SDK. Includes FastMCP,
+#              the protocol handlers, and SSE transport support.
+#              "[cli]" installs extra tools for development.
+#
+# httpx      - Async HTTP client. We use it to call ip-api.com
+#              for IP geolocation. Asyncio-native (no blocking).
+#
+# uvicorn    - ASGI web server. FastMCP uses this to serve the
+#              SSE (HTTP) transport that our agent connects to.
+# ─────────────────────────────────────────────────────────────────
+mcp[cli]>=1.0.0
+httpx>=0.27.0
+uvicorn>=0.30.0

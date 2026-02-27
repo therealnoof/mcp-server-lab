@@ -1,0 +1,12 @@
+# Agent Dependencies
+# ─────────────────────────────────────────────────────────────────
+# mcp[cli]   - MCP SDK for the CLIENT side. We use ClientSession
+#              and sse_client to connect to the MCP server and
+#              discover/call tools.
+#
+# ollama     - Python client for the Ollama LLM server.
+#              Handles sending prompts, receiving tool call
+#              decisions, and managing the conversation.
+# ─────────────────────────────────────────────────────────────────
+mcp[cli]>=1.0.0
+ollama>=0.3.0
