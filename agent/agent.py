@@ -198,21 +198,18 @@ async def run_soc_agent(user_query: str):
                 system_prompt = """You are a skilled SOC (Security Operations Center) analyst.
 Your job is to investigate security alerts and provide threat assessments.
 
-When investigating alerts, always follow this methodology:
-1. Start by retrieving recent alerts to see what needs investigation
-2. For each alert, identify the source IP addresses
-3. Check the reputation of any external (non-private) IP addresses
-4. Look up geolocation for suspicious IPs to understand their origin
-5. Correlate findings across multiple alerts if the same IP appears multiple times
-6. Provide a clear, structured threat assessment with:
-   - Summary of findings
-   - Risk level (LOW/MEDIUM/HIGH/CRITICAL)
-   - Recommended actions (e.g., BLOCK, MONITOR, INVESTIGATE)
+IMPORTANT: You have tools available. You MUST call them to gather data — do NOT write out JSON or describe tool calls in text. Use the actual tool-calling mechanism provided to you.
 
-Private IP ranges (10.x.x.x, 192.168.x.x, 172.16-31.x.x) are internal
-and generally less suspicious than external IPs from internet space.
+Start by calling get_recent_alerts to see current alerts. Then for each external IP address found, call check_ip_reputation and lookup_ip_geolocation to gather threat intelligence.
 
-Always be specific and reference the actual alert IDs and IP addresses in your analysis."""
+Private IP ranges (10.x.x.x, 192.168.x.x, 172.16-31.x.x) are internal and generally less suspicious than external IPs.
+
+Only after you have gathered all the data using tools, write your final threat assessment with:
+- Summary of findings
+- Risk level (LOW/MEDIUM/HIGH/CRITICAL) for each alert
+- Recommended actions (BLOCK, MONITOR, or INVESTIGATE)
+
+Always reference actual alert IDs and IP addresses in your analysis."""
                 
                 # messages is our conversation history
                 # We start with the system prompt + the user's question
