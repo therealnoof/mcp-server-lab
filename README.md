@@ -542,6 +542,22 @@ on its own after reading the alerts. That's autonomous reasoning.
 
 Work through these in order — each teaches a distinct concept.
 
+> **Important — Rebuilding after code changes:**
+> The agent and MCP server run inside Docker containers built from your code.
+> When you edit `agent/agent.py` or `mcp_server/server.py`, Docker is still
+> running the **old** copy. You must rebuild to pick up your changes:
+> ```bash
+> # Rebuild the agent after editing agent/agent.py:
+> docker compose build agent
+>
+> # Rebuild the MCP server after editing mcp_server/server.py:
+> docker compose build mcp-server
+> ```
+> Then run the agent with:
+> ```bash
+> docker compose run --rm agent python agent.py
+> ```
+
 ---
 
 ### Exercise 1: Change the Query (Beginner)
@@ -562,8 +578,9 @@ Change it to a more targeted question:
 query = "Is IP 45.33.32.156 a threat? Investigate it and tell me if we should block it."
 ```
 
-Run the agent again:
+Rebuild and run the agent:
 ```bash
+docker compose build agent
 docker compose run --rm agent python agent.py
 ```
 
@@ -639,8 +656,9 @@ For each alert, respond ONLY with:
 No narrative. No recommendations. Just the structured output above."""
 ```
 
-Run the agent:
+Rebuild and run the agent:
 ```bash
+docker compose build agent
 docker compose run --rm agent python agent.py
 ```
 
