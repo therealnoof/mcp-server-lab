@@ -30,7 +30,7 @@ from mcp.server.fastmcp import FastMCP
 # Create the MCP server instance
 # "SOC Tools Server" is just a human-readable name
 # -------------------------------------------------------
-mcp = FastMCP("SOC Tools Server")
+mcp = FastMCP("SOC Tools Server", host="0.0.0.0", port=8000)
 
 
 # -------------------------------------------------------
@@ -252,4 +252,4 @@ if __name__ == "__main__":
     print("Starting SOC Tools MCP Server on port 8000...")
     print("Available tools: get_recent_alerts, lookup_ip_geolocation,")
     print("                 check_ip_reputation, get_alert_details")
-    mcp.run(transport="sse", host="0.0.0.0", port=8000)
+    mcp.run(transport="sse")
