@@ -292,15 +292,12 @@ docker stop ollama-setup && docker rm ollama-setup
 
 ## Step 8: Distribute Lab Files to Students
 
+The lab repo has been cloned to each student machine at `/home/ubuntu/mcp-server-lab`.
+
 ```bash
-# Option A: SCP from instructor machine to student machines
-scp phase1-lab.zip student@<student-ip>:~/
-
-# Option B: Copy to local user home directories on shared machine
-cp phase1-lab.zip /home/<student-username>/
+# If you need to re-clone on a student machine:
+git clone https://github.com/therealnoof/mcp-server-lab.git /home/ubuntu/mcp-server-lab
 ```
-
-Students will unzip this themselves as their first lab step.
 
 ---
 
@@ -406,7 +403,7 @@ agentic systems.
 ## Lab Files
 
 ```
-phase1-lab/
+mcp-server-lab/
 ├── docker-compose.yml     ← Wires the three services together
 ├── mcp_server/
 │   └── server.py          ← Tool definitions live here (you'll edit this)
@@ -419,11 +416,12 @@ phase1-lab/
 
 ## Lab Steps
 
-### Step 1: Unzip and enter the lab directory
+### Step 1: Navigate to the lab directory
+
+The lab files have already been cloned to your machine. Navigate to the lab directory:
 
 ```bash
-unzip phase1-lab.zip
-cd phase1-lab
+cd /home/ubuntu/mcp-server-lab
 ```
 
 ---
@@ -739,7 +737,7 @@ LLM writes final threat assessment ← DONE
 | `Connection refused` to Ollama | `docker compose logs ollama` — GPU may still be loading. Wait 30 seconds and retry |
 | Agent loops without concluding | Try a simpler query, or swap to `llama3.1:13b` in `docker-compose.yml` |
 | Geolocation tool fails | ip-api.com requires outbound internet. Ask your instructor if the container network allows it |
-| `docker compose run` says service not found | Make sure you're inside the `phase1-lab/` directory |
+| `docker compose run` says service not found | Make sure you're inside the `/home/ubuntu/mcp-server-lab` directory |
 | Model not found in Ollama | Ask your instructor — Step 7 of their setup may need to be re-run |
 
 ---
