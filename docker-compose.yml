@@ -103,7 +103,7 @@ services:
     
     # Health check: make sure the MCP server is up before agent starts
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/sse"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 5
