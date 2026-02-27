@@ -428,6 +428,12 @@ cd /home/ubuntu/mcp-server-lab
 
 ### Step 2: Start the lab environment
 
+> **Note:** The services may already be running from a previous session or server reboot. Check first:
+> ```bash
+> docker compose ps
+> ```
+> If all services show `running` or `healthy`, you can skip ahead to Step 3.
+
 ```bash
 docker compose up -d
 ```
