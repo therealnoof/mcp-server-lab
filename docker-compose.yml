@@ -70,14 +70,14 @@ services:
       - ollama_models:/root/.ollama
     
     # Wait for ollama to be healthy, then pull the model
-    command: >
-      sh -c "
+    # Note: The image entrypoint is "ollama", so command args are appended to it
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
         echo 'Waiting for Ollama to be ready...' &&
-        sleep 10 &&
         ollama pull llama3.1:8b &&
         echo 'Model ready!'
-      "
-    
+
     environment:
       - OLLAMA_HOST=http://ollama:11434  # Point to the ollama service
     
